@@ -1,5 +1,5 @@
 export const metadata = {
-  title: '404 // GIIIIIIIIIIs'
+  title: 'Tavyza Docs: error 404'
 }
 
 export default function Home() {

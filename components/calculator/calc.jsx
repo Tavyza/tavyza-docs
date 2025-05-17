@@ -6,26 +6,35 @@ function evaluateOctal(equation) {
   // Remove all spaces
   equation = equation.replaceAll(' ', '');
   
-  // Function to tokenize the equation
+  // Function to tokenize the equation, now handling fractional numbers with dots
   function tokenize(str) {
     const tokens = [];
     let currentNumber = '';
+    let hasDot = false;
     
     for (let i = 0; i < str.length; i++) {
       const char = str[i];
-      if ('01234567'.includes(char)) {
+      
+      // Handle digits and dots in numbers
+      if ('01234567'.includes(char) || (char === '.' && !hasDot && currentNumber.length > 0)) {
+        if (char === '.') hasDot = true;
         currentNumber += char;
       } else {
+        // End of current number
         if (currentNumber) {
           tokens.push(currentNumber);
           currentNumber = '';
+          hasDot = false;
         }
+        
+        // Handle operators and brackets
         if ('+-*/()[]'.includes(char)) {
           tokens.push(char);
         }
       }
     }
     
+    // Add the last number if present
     if (currentNumber) {
       tokens.push(currentNumber);
     }
@@ -33,34 +42,57 @@ function evaluateOctal(equation) {
     return tokens;
   }
   
-  // Function to convert from octal to decimal
+  // Function to convert octal to decimal, now handling fractional parts with dots
   function octalToDecimal(octal) {
+    if (octal.includes('.')) {
+      const [wholePart, fractionalPart] = octal.split('.');
+      
+      // Convert whole part
+      let decimalValue = parseInt(wholePart, 8);
+      
+      // Convert fractional part
+      if (fractionalPart) {
+        let fractionalDecimal = 0;
+        for (let i = 0; i < fractionalPart.length; i++) {
+          fractionalDecimal += parseInt(fractionalPart[i], 8) / Math.pow(8, i + 1);
+        }
+        decimalValue += fractionalDecimal;
+      }
+      
+      return decimalValue;
+    }
+    
+    // Simple whole number case
     return parseInt(octal, 8);
   }
   
-  // Function to convert from decimal to octal
+  // Simplified decimal to octal conversion with proper fractional handling using dots
   function decimalToOctal(decimal) {
+    // Handle whole numbers
+    if (Number.isInteger(decimal)) {
+      return decimal.toString(8);
+    }
+    
+    // For numbers with fractional parts
     const wholePart = Math.floor(decimal);
     const fractionalPart = decimal - wholePart;
     
-    let octalWholePart = wholePart.toString(8);
+    // Convert whole part to octal
+    const octalWholePart = wholePart.toString(8);
     
-    // Handle fractional part (if any)
-    if (fractionalPart > 0) {
-      let octalFractionalPart = '';
-      let currentFraction = fractionalPart;
-      // Calculate up to 8 octal fractional digits
-      for (let i = 0; i < 8 && currentFraction > 0; i++) {
-        currentFraction *= 8;
-        const digit = Math.floor(currentFraction);
-        octalFractionalPart += digit.toString();
-        currentFraction -= digit;
-      }
-      
-      return octalFractionalPart ? `${octalWholePart},${octalFractionalPart}` : octalWholePart;
+    // Convert fractional part to octal
+    let octalFractional = '';
+    let currentFractional = fractionalPart;
+    
+    // Calculate octal representation of fractional part (with reasonable precision)
+    for (let i = 0; i < 6 && currentFractional > 0.00001; i++) {
+      currentFractional *= 8;
+      const digit = Math.floor(currentFractional);
+      octalFractional += digit;
+      currentFractional -= digit;
     }
     
-    return octalWholePart;
+    return octalFractional ? `${octalWholePart}.${octalFractional}` : octalWholePart;
   }
   
   // Implementation of the shunting yard algorithm for parsing expressions
@@ -76,8 +108,8 @@ function evaluateOctal(equation) {
     };
     
     for (const token of tokens) {
-      if (!isNaN(token)) {
-        // If token is a number, add it to the output queue
+      if (token.match(/^[0-7]+(\.[0-7]+)?$/)) {
+        // If token is a number (potentially with fraction), add it to the output queue
         outputQueue.push(token);
       } else if ('+-*/'.includes(token)) {
         // If token is an operator
@@ -121,8 +153,8 @@ function evaluateOctal(equation) {
     const stack = [];
     
     for (const token of rpn) {
-      if (!isNaN(token)) {
-        // If token is a number, push its octal value to the stack
+      if (token.match(/^[0-7]+(\.[0-7]+)?$/)) {
+        // If token is a number, push its decimal value to the stack
         stack.push(octalToDecimal(token));
       } else if ('+-*/'.includes(token)) {
         // If token is an operator, pop two values from the stack,
@@ -153,9 +185,9 @@ function evaluateOctal(equation) {
   
   // Main calculation process
   try {
-    // Check if equation contains only valid octal digits and operators
-    if (!/^[0-7+\-*/()[\]\s]+$/.test(equation)) {
-      return "Error: Only octal digits (0-7) and operators are allowed";
+    // Check if equation contains only valid characters
+    if (!/^[0-7+\-*/()[\].\s]+$/.test(equation)) {
+      return "Error: Only octal digits (0-7), operators, and dots for fractions are allowed";
     }
     
     const tokens = tokenize(equation);
@@ -186,20 +218,20 @@ export default function Calculator() {
           placeholder="Enter an equation (e.g., 5 + 3 - 4 / (3 * 2))"
         />
         <button 
-          class="calcbutton"
+          className="calcbutton"
           onClick={handleCalculate}
         >
           Calculate
         </button>
       </div>
       <div className="text-sm text-gray-600 mb-4">
-        * Note: Only octal digits (0-7) are allowed.
       </div>
       {result && (
         <div className="mt-4 p-3 bg-gray-100 rounded">
           <strong>Result:</strong> {result}
         </div>
       )}
+      * Note: Only octal digits (0-7) are allowed.
     </div>
   )
 }
