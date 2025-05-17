@@ -186,7 +186,7 @@ export default function Calculator() {
           placeholder="Enter an equation (e.g., 5 + 3 - 4 / (3 * 2))"
         />
         <button 
-          className="bg-blue-500 text-white px-4 py-2"
+          class="calcbutton"
           onClick={handleCalculate}
         >
           Calculate

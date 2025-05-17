@@ -1,7 +1,8 @@
 import Calculator from "@/components/calculator/calc"
 
 export const metadata = {
-  title:"we have template"
+  title:"Tavyza Docs: Calculator",
+  Description:"A base-8 calculator using the BPMDASE order of operations\nBPMDASE is Brackets, Parentheses, Multiplication + Division, Addition + Subtraction, Exponents"
 }
 
 
